@@ -219,6 +219,10 @@ pub async fn run(
         }
     }
 
+    if let Err(e) = client.update_item_last_use_time(&share_id, &item.id).await {
+        warn!("Error updating item last use time: {e:#}");
+    }
+
     send_reason_if_agent_with_name(
         &client,
         EventAction::ItemRead,

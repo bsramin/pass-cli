@@ -91,6 +91,8 @@ pub(crate) struct ItemRevision {
     pub create_time: u64,
     #[serde(rename = "ModifyTime")]
     pub modify_time: u64,
+    #[serde(rename = "LastUseTime", default)]
+    pub last_use_time: Option<u64>,
     #[serde(rename = "FolderID")]
     pub folder_id: Option<String>,
 }
@@ -251,6 +253,7 @@ mod tests {
                     .unwrap()
                     .to_zoned(jiff::tz::TimeZone::UTC)
                     .datetime(),
+                last_use_time: None,
                 folder_id: None,
             },
             item_key: crate::item::item_keys::OpenedItemKey {
@@ -311,6 +314,7 @@ mod tests {
                     .unwrap()
                     .to_zoned(jiff::tz::TimeZone::UTC)
                     .datetime(),
+                last_use_time: None,
                 folder_id: None,
             },
             item_key: crate::item::item_keys::OpenedItemKey {
@@ -375,6 +379,7 @@ mod tests {
                     .unwrap()
                     .to_zoned(jiff::tz::TimeZone::UTC)
                     .datetime(),
+                last_use_time: None,
                 folder_id: None,
             },
             item_key: crate::item::item_keys::OpenedItemKey {

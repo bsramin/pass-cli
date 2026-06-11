@@ -165,6 +165,7 @@ mod tests {
                     alias_email: None,
                     create_time: 0,
                     modify_time: 0,
+                    last_use_time: None,
                     folder_id: None,
                 },
             })
@@ -255,6 +256,7 @@ mod tests {
                     alias_email: None,
                     create_time: 0,
                     modify_time: 0,
+                    last_use_time: None,
                     folder_id: None,
                 },
             })
@@ -345,6 +347,7 @@ mod tests {
                     alias_email: None,
                     create_time: 0,
                     modify_time: 0,
+                    last_use_time: None,
                     folder_id: None,
                 },
             })
@@ -501,6 +504,7 @@ mod tests {
                     alias_email: None,
                     create_time: 0,
                     modify_time: 0,
+                    last_use_time: None,
                     folder_id: None,
                 },
             })

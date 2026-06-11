@@ -70,6 +70,8 @@ struct ItemSummary {
     create_time: jiff::civil::DateTime,
     modify_time: jiff::civil::DateTime,
     #[serde(skip_serializing_if = "Option::is_none")]
+    last_use_time: Option<jiff::civil::DateTime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     folder_id: Option<FolderId>,
     title: String,
     item_type: ItemType,
@@ -85,6 +87,7 @@ impl From<&Item> for ItemSummary {
             flags: item.flags.clone(),
             create_time: item.create_time,
             modify_time: item.modify_time,
+            last_use_time: item.last_use_time,
             folder_id: item.folder_id.clone(),
             title: item.content.title.clone(),
             item_type: ItemType::from(&item.content.content),
@@ -393,6 +396,7 @@ mod tests {
             flags: vec![],
             create_time: jiff::civil::DateTime::constant(2026, 1, 1, 0, 0, 0, 0),
             modify_time: jiff::civil::DateTime::constant(2026, 1, 1, 0, 0, 0, 0),
+            last_use_time: None,
             folder_id: None,
         }
     }

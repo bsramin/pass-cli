@@ -481,6 +481,7 @@ mod tests {
                 .unwrap()
                 .to_zoned(jiff::tz::TimeZone::UTC)
                 .datetime(),
+            last_use_time: None,
             folder_id: None,
         }
     }
