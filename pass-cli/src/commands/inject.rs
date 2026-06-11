@@ -118,6 +118,7 @@ pub async fn run(
         .process_template(&template)
         .await
         .context("Failed to process template")?;
+    processor.update_last_use_times().await;
 
     // Write output
     match out_file {
@@ -158,6 +159,10 @@ impl<R: SecretResolver> TemplateProcessor<R> {
             resolver,
             secrets_cache: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    pub async fn update_last_use_times(&self) {
+        self.resolver.update_last_use_times().await;
     }
 
     pub async fn process_template(&self, template: &str) -> Result<String> {

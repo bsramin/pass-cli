@@ -148,15 +148,22 @@ impl SecretReference {
 pub trait SecretResolver {
     async fn resolve_secret(&self, secret_ref: &SecretReference) -> Result<String>;
     async fn resolve_secret_and_send_reason(&self, secret_ref: &SecretReference) -> Result<String>;
+    /// Updates the last use time of all items resolved so far. Best effort:
+    /// failures are logged and do not interrupt the caller.
+    async fn update_last_use_times(&self) {}
 }
 
 pub struct PassClientResolver {
     client: PassClient,
+    resolved_items: Mutex<HashMap<String, (ShareId, ItemId)>>,
 }
 
 impl PassClientResolver {
     pub fn new(client: PassClient) -> Self {
-        Self { client }
+        Self {
+            client,
+            resolved_items: Mutex::new(HashMap::new()),
+        }
     }
 }
 
@@ -182,6 +189,12 @@ impl SecretResolver for PassClientResolver {
             )
         })?;
 
+        self.resolved_items
+            .lock()
+            .await
+            .entry(format!("{}:{}", item.share_id, item.id))
+            .or_insert_with(|| (item.share_id.clone(), item.id.clone()));
+
         let field = item.get_field(&secret_ref.field_name).ok_or_else(|| {
             anyhow!(
                 "Field '{}' not found in item '{}'",
@@ -202,6 +215,26 @@ impl SecretResolver for PassClientResolver {
         )
         .await?;
         self.resolve_secret(secret_ref).await
+    }
+
+    async fn update_last_use_times(&self) {
+        let resolved: Vec<(ShareId, ItemId)> = self
+            .resolved_items
+            .lock()
+            .await
+            .drain()
+            .map(|(_, ids)| ids)
+            .collect();
+
+        for (share_id, item_id) in resolved {
+            if let Err(e) = self
+                .client
+                .update_item_last_use_time(&share_id, &item_id)
+                .await
+            {
+                warn!("Error updating last use time for item {item_id}: {e:#}");
+            }
+        }
     }
 }
 
