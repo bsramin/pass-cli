@@ -61,7 +61,7 @@ pub enum ItemCommands {
         filter_state: Option<FilterState>,
         #[arg(
             long,
-            help = "Sort items (alphabetic-asc, alphabetic-desc, created-asc, created-desc)"
+            help = "Sort items (alphabetic-asc, alphabetic-desc, created-asc, created-desc, last-used-asc, last-used-desc)"
         )]
         sort_by: Option<SortBy>,
         #[arg(long)]

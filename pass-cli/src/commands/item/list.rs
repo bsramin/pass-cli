@@ -127,6 +127,8 @@ pub enum SortBy {
     AlphabeticDesc,
     CreatedAsc,
     CreatedDesc,
+    LastUsedAsc,
+    LastUsedDesc,
 }
 
 impl FilterType {
@@ -216,6 +218,13 @@ impl SortBy {
             SortBy::CreatedDesc => {
                 items.sort_by(|a, b| b.create_time.cmp(&a.create_time));
             }
+            // Items never used sort as oldest: first in asc, last in desc.
+            SortBy::LastUsedAsc => {
+                items.sort_by(|a, b| a.last_use_time.cmp(&b.last_use_time));
+            }
+            SortBy::LastUsedDesc => {
+                items.sort_by(|a, b| b.last_use_time.cmp(&a.last_use_time));
+            }
         }
     }
 }
@@ -229,8 +238,10 @@ impl FromStr for SortBy {
             "alphabetic-desc" => Ok(SortBy::AlphabeticDesc),
             "created-asc" => Ok(SortBy::CreatedAsc),
             "created-desc" => Ok(SortBy::CreatedDesc),
+            "last-used-asc" => Ok(SortBy::LastUsedAsc),
+            "last-used-desc" => Ok(SortBy::LastUsedDesc),
             _ => Err(anyhow!(
-                "Invalid sort type '{}'. Valid types are: alphabetic-asc, alphabetic-desc, created-asc, created-desc",
+                "Invalid sort type '{}'. Valid types are: alphabetic-asc, alphabetic-desc, created-asc, created-desc, last-used-asc, last-used-desc",
                 s
             )),
         }
@@ -407,6 +418,36 @@ mod tests {
         let summary = ItemSummary::from(&item);
         assert!(matches!(summary.item_type, ItemType::Note));
         assert_eq!(summary.title, "My Item");
+    }
+
+    #[test]
+    fn sort_by_last_used() {
+        let with_last_use = |title: &str, last_use: Option<jiff::civil::DateTime>| {
+            let mut item = make_item(ItemContent::Note(NoteItem));
+            item.content.title = title.to_string();
+            item.last_use_time = last_use;
+            item
+        };
+
+        let mut items = vec![
+            with_last_use(
+                "recent",
+                Some(jiff::civil::DateTime::constant(2026, 6, 11, 12, 0, 0, 0)),
+            ),
+            with_last_use("never", None),
+            with_last_use(
+                "old",
+                Some(jiff::civil::DateTime::constant(2026, 1, 5, 8, 0, 0, 0)),
+            ),
+        ];
+
+        SortBy::LastUsedDesc.sort_items(&mut items);
+        let titles: Vec<&str> = items.iter().map(|i| i.content.title.as_str()).collect();
+        assert_eq!(titles, ["recent", "old", "never"]);
+
+        SortBy::LastUsedAsc.sort_items(&mut items);
+        let titles: Vec<&str> = items.iter().map(|i| i.content.title.as_str()).collect();
+        assert_eq!(titles, ["never", "old", "recent"]);
     }
 
     #[test]
