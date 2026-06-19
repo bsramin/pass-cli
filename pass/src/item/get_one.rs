@@ -340,9 +340,11 @@ mod tests {
 
         let encrypted_data = encrypt_item_contents(data.clone());
         let encoded_data = b64_encode(&encrypted_data.encrypted_contents);
+        const LAST_USE_TIME: u64 = 1500000000;
         let revision = ItemRevisionBuilder::new(ITEM_ID.to_string())
             .with_content(encoded_data.clone())
             .with_item_key(Some(b64_encode(encrypted_data.encrypted_item_key.clone())))
+            .with_last_use_time(LAST_USE_TIME)
             .build();
         let handled = setup_item_revision(&api, SHARE_ID, ITEM_ID, revision.clone());
 
@@ -359,6 +361,12 @@ mod tests {
 
         assert_eq!(ITEM_ID, details.item.id.value());
         assert_eq!(data, details.item.content);
+
+        let expected_last_use = jiff::Timestamp::from_second(LAST_USE_TIME as i64)
+            .unwrap()
+            .to_zoned(jiff::tz::TimeZone::UTC)
+            .datetime();
+        assert_eq!(Some(expected_last_use), details.item.last_use_time);
     }
 
     #[muon_test::test]

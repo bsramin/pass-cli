@@ -134,6 +134,13 @@ pub async fn run(
         }
     };
 
+    if let Err(e) = client
+        .update_item_last_use_time(&item.item.share_id, &item.item.id)
+        .await
+    {
+        warn!("Error updating item last use time: {e:#}");
+    }
+
     if let Some(field) = effective_field {
         match item.item.get_field(&field) {
             Some(field_value) => println!("{}", field_value.value()),

@@ -17,7 +17,9 @@
  *
  */
 
-use super::secret_resolver::{PassClientResolver, SecretCache, SecretReference, find_pass_uri};
+use super::secret_resolver::{
+    PassClientResolver, SecretCache, SecretReference, SecretResolver, find_pass_uri,
+};
 use crate::helpers::CliPassClient as PassClient;
 use crate::telemetry::event::CommandEvent;
 
@@ -176,6 +178,8 @@ async fn resolve_secrets_and_create_env(
             resolved_secret_values.insert(env_var.name.clone(), resolved_value);
         }
     }
+
+    resolver.update_last_use_times().await;
 
     Ok(merge_resolved_env(env_vars, resolved_secret_values))
 }

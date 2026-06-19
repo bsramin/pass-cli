@@ -71,6 +71,8 @@ pub struct Item {
     pub create_time: jiff::civil::DateTime,
     pub modify_time: jiff::civil::DateTime,
     #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub last_use_time: Option<jiff::civil::DateTime>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub folder_id: Option<FolderId>,
 }
 

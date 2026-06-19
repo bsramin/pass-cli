@@ -70,6 +70,8 @@ struct ItemSummary {
     create_time: jiff::civil::DateTime,
     modify_time: jiff::civil::DateTime,
     #[serde(skip_serializing_if = "Option::is_none")]
+    last_use_time: Option<jiff::civil::DateTime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     folder_id: Option<FolderId>,
     title: String,
     item_type: ItemType,
@@ -85,6 +87,7 @@ impl From<&Item> for ItemSummary {
             flags: item.flags.clone(),
             create_time: item.create_time,
             modify_time: item.modify_time,
+            last_use_time: item.last_use_time,
             folder_id: item.folder_id.clone(),
             title: item.content.title.clone(),
             item_type: ItemType::from(&item.content.content),
@@ -124,6 +127,8 @@ pub enum SortBy {
     AlphabeticDesc,
     CreatedAsc,
     CreatedDesc,
+    LastUsedAsc,
+    LastUsedDesc,
 }
 
 impl FilterType {
@@ -213,6 +218,13 @@ impl SortBy {
             SortBy::CreatedDesc => {
                 items.sort_by_key(|a| std::cmp::Reverse(a.create_time));
             }
+            // Items never used sort as oldest: first in asc, last in desc.
+            SortBy::LastUsedAsc => {
+                items.sort_by(|a, b| a.last_use_time.cmp(&b.last_use_time));
+            }
+            SortBy::LastUsedDesc => {
+                items.sort_by(|a, b| b.last_use_time.cmp(&a.last_use_time));
+            }
         }
     }
 }
@@ -226,8 +238,10 @@ impl FromStr for SortBy {
             "alphabetic-desc" => Ok(SortBy::AlphabeticDesc),
             "created-asc" => Ok(SortBy::CreatedAsc),
             "created-desc" => Ok(SortBy::CreatedDesc),
+            "last-used-asc" => Ok(SortBy::LastUsedAsc),
+            "last-used-desc" => Ok(SortBy::LastUsedDesc),
             _ => Err(anyhow!(
-                "Invalid sort type '{}'. Valid types are: alphabetic-asc, alphabetic-desc, created-asc, created-desc",
+                "Invalid sort type '{}'. Valid types are: alphabetic-asc, alphabetic-desc, created-asc, created-desc, last-used-asc, last-used-desc",
                 s
             )),
         }
@@ -393,6 +407,7 @@ mod tests {
             flags: vec![],
             create_time: jiff::civil::DateTime::constant(2026, 1, 1, 0, 0, 0, 0),
             modify_time: jiff::civil::DateTime::constant(2026, 1, 1, 0, 0, 0, 0),
+            last_use_time: None,
             folder_id: None,
         }
     }
@@ -403,6 +418,36 @@ mod tests {
         let summary = ItemSummary::from(&item);
         assert!(matches!(summary.item_type, ItemType::Note));
         assert_eq!(summary.title, "My Item");
+    }
+
+    #[test]
+    fn sort_by_last_used() {
+        let with_last_use = |title: &str, last_use: Option<jiff::civil::DateTime>| {
+            let mut item = make_item(ItemContent::Note(NoteItem));
+            item.content.title = title.to_string();
+            item.last_use_time = last_use;
+            item
+        };
+
+        let mut items = vec![
+            with_last_use(
+                "recent",
+                Some(jiff::civil::DateTime::constant(2026, 6, 11, 12, 0, 0, 0)),
+            ),
+            with_last_use("never", None),
+            with_last_use(
+                "old",
+                Some(jiff::civil::DateTime::constant(2026, 1, 5, 8, 0, 0, 0)),
+            ),
+        ];
+
+        SortBy::LastUsedDesc.sort_items(&mut items);
+        let titles: Vec<&str> = items.iter().map(|i| i.content.title.as_str()).collect();
+        assert_eq!(titles, ["recent", "old", "never"]);
+
+        SortBy::LastUsedAsc.sort_items(&mut items);
+        let titles: Vec<&str> = items.iter().map(|i| i.content.title.as_str()).collect();
+        assert_eq!(titles, ["never", "old", "recent"]);
     }
 
     #[test]
